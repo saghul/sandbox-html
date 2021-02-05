@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>lib-jitsi-meet JaaS sample</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/strophe.js@1.4.1/dist/strophe.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/strophejs-plugin-disco@0.0.2/lib/strophe.disco.min.js"></script>
+    <script src="https://8x8.vc/libs/lib-jitsi-meet.min.js"></script>
+    <script src="example.js" ></script>
+</head>
+<body>
+    <form class="form-horizontal">
+        <fieldset>
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="textinput">Tenant</label>  
+          <div class="col-md-4">
+          <input id="tenantInput" name="textinput" type="text" placeholder="vpaas-magic-cookie-..." class="form-control input-md" required="">
+            
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="textinput">JWT</label>  
+          <div class="col-md-4">
+          <input id="tokenInput" name="textinput" type="text" placeholder="" class="form-control input-md" required="">
+            
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="textinput">Room</label>  
+          <div class="col-md-4">
+          <input id="roomInput" name="textinput" type="text" placeholder="" class="form-control input-md" required="">
+            
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-md-4 control-label" for="singlebutton"></label>
+          <div class="col-md-4">
+            <button id="goButton" type="button" name="singlebutton" class="btn btn-primary">Go</button>
+          </div>
+        </div>
+        </fieldset>
+    </form>
+</body>
+</html>
