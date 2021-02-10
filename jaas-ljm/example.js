@@ -10,7 +10,7 @@ function buildOptions(tenant) {
                 muc: `conference.${tenant}.8x8.vc`,
                 focus: 'focus.8x8.vc'
             },
-            serviceUrl: 'wss://8x8.vc/xmpp-websocket',
+            serviceUrl: `wss://8x8.vc/xmpp-websocket?room=${roomName}`,
             clientNode: 'http://jitsi.org/jitsimeet'
         },
         conference: {
