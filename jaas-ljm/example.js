@@ -74,6 +74,8 @@ function onConferenceJoined() {
     for (let i = 0; i < localTracks.length; i++) {
         room.addTrack(localTracks[i]);
     }
+
+    room.setReceiverVideoConstraint(720);
 }
 
 
@@ -109,8 +111,6 @@ function onConnectionSuccess() {
         JitsiMeetJS.events.conference.USER_LEFT,
         onUserLeft);
     room.join();
-    
-    room.setReceiverVideoConstraint(720);
 }
 
 
