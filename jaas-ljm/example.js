@@ -28,7 +28,7 @@ let room = null;
 
 let localTracks = [];
 const remoteTracks = {};
-
+let participantIds = new Set();
 
 function onLocalTracks(tracks) {
     localTracks = tracks;
@@ -74,21 +74,24 @@ function onConferenceJoined() {
     for (let i = 0; i < localTracks.length; i++) {
         room.addTrack(localTracks[i]);
     }
+}
 
-    room.setReceiverVideoConstraint(720);
+
+function onUserJoined(id) {
+    console.log('user joined');
+
+    participantIds.add(id);
+    
+    room.selectParticipants(Array.from(participantIds));
 }
 
 
 function onUserLeft(id) {
     console.log('user left');
-    if (!remoteTracks[id]) {
-        return;
-    }
-    const tracks = remoteTracks[id];
 
-    for (let i = 0; i < tracks.length; i++) {
-        tracks[i].detach($(`#${id}${tracks[i].getType()}`));
-    }
+    participantIds.delete(id);
+    
+    room.selectParticipants(Array.from(participantIds));
 }
 
 
@@ -104,13 +107,12 @@ function onConnectionSuccess() {
         onConferenceJoined);
     room.on(
         JitsiMeetJS.events.conference.USER_JOINED,
-        id => {
-            console.log(`user joined: id`);
-        });
+        onUserJoined);
     room.on(
         JitsiMeetJS.events.conference.USER_LEFT,
         onUserLeft);
     room.join();
+    room.setReceiverVideoConstraint(720);
 }
 
 
