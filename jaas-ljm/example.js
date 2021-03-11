@@ -14,6 +14,7 @@ function buildOptions(tenant) {
             clientNode: 'http://jitsi.org/jitsimeet'
         },
         conference: {
+            enableLayerSuspension: true,
             p2p: {
                 enabled: false
             }
