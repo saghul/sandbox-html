@@ -15,7 +15,7 @@ function buildOptions(tenant) {
         },
         conference: {
             p2p: {
-                enabled: true
+                enabled: false
             }
         }
     };
@@ -108,6 +108,8 @@ function onConnectionSuccess() {
         JitsiMeetJS.events.conference.USER_LEFT,
         onUserLeft);
     room.join();
+    
+    room.setReceiverVideoConstraint(720);
 }
 
 
