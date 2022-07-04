@@ -12,6 +12,7 @@ function buildOptions(tenant, roomName) {
         },
         serviceUrl: `wss://8x8.vc/xmpp-websocket?room=${roomName}`,
         websocketKeepAliveUrl: `https://8x8.vc/_unlock?room=${roomName}`,
+
         // Video quality / constraints
         constraints: {
             video: {
@@ -28,13 +29,30 @@ function buildOptions(tenant, roomName) {
             }
         },
         channelLastN: 25,
+
         // Enable Peer-to-Peer for 1-1 calls
         p2p: {
             enabled: true
         },
+
         // Enable Callstats (note, none of this is secret, despite its name)
         callStatsID: '706724306',
         callStatsSecret: 'f+TKWryzPOyX:dNR8PMw42WJwM3YM1XkJUjPOLY0M40wz+0D4mZud8mQ=',
+        confID: `https://8x8.vc/${tenant}/${roomName}`,
+
+        // Misc
+        deploymentInfo: {},
+
+        // Logging
+        logging: {
+            // Default log level
+            defaultLogLevel: 'trace',
+
+            // The following are too verbose in their logging with the default level
+            'modules/RTC/TraceablePeerConnection.js': 'info',
+            'modules/statistics/CallStats.js': 'info',
+            'modules/xmpp/strophe.util.js': 'log'
+        },
 
         // End marker, disregard
         __end: true
@@ -181,8 +199,16 @@ $(document).ready(function() {
 
         options = buildOptions(tenant, roomName);
 
+        // Initialize lib-jitsi-meet
         JitsiMeetJS.init(options);
-        JitsiMeetJS.setLogLevel('trace');
+
+        // Initialize logging.
+        JitsiMeetJS.setLogLevel(options.logging.defaultLogLevel);
+        for (const [ loggerId, level ] of Object.entries(options.logging)) {
+            if (loggerId !== 'defaultLogLevel') {
+                JitsiMeetJS.setLogLevelById(level, loggerId);
+            }
+        }
 
         const tracks = await JitsiMeetJS.createLocalTracks({ devices: [ 'audio', 'video' ] });
         onLocalTracks(tracks);
