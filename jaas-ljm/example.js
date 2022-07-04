@@ -39,6 +39,8 @@ function buildOptions(tenant, roomName) {
         callStatsID: '706724306',
         callStatsSecret: 'f+TKWryzPOyX:dNR8PMw42WJwM3YM1XkJUjPOLY0M40wz+0D4mZud8mQ=',
         confID: `https://8x8.vc/${tenant}/${roomName}`,
+        siteID: tenant,
+        applicationName: 'My Sample JaaS App',
 
         // Misc
         deploymentInfo: {},
