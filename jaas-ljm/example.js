@@ -2,28 +2,46 @@ let options;
 let roomName;
 let token;
 
-function buildOptions(tenant) {
+function buildOptions(tenant, roomName) {
     return {
-        connection: {
-            hosts: {
-                domain: '8x8.vc',
-                muc: `conference.${tenant}.8x8.vc`,
-                focus: 'focus.8x8.vc'
-            },
-            serviceUrl: `wss://8x8.vc/xmpp-websocket?room=${roomName}`,
-            clientNode: 'http://jitsi.org/jitsimeet'
+        // Connection
+        hosts: {
+            domain: '8x8.vc',
+            muc: `conference.${tenant}.8x8.vc`,
+            focus: 'focus.8x8.vc'
         },
-        conference: {
-            enableLayerSuspension: true,
-            p2p: {
-                enabled: false
+        serviceUrl: `wss://8x8.vc/xmpp-websocket?room=${roomName}`,
+        websocketKeepAliveUrl: `https://8x8.vc/_unlock?room=${roomName}`,
+        // Video quality / constraints
+        constraints: {
+            video: {
+                height: {
+                    ideal: 720,
+                    max: 720,
+                    min: 180
+                },
+                width: {
+                    ideal: 1280,
+                    max: 1280,
+                    min: 320
+                }
             }
-        }
+        },
+        channelLastN: 25,
+        // Enable Peer-to-Peer for 1-1 calls
+        p2p: {
+            enabled: true
+        },
+        // Enable Callstats (note, none of this is secret, despite its name)
+        callStatsID: '706724306',
+        callStatsSecret: 'f+TKWryzPOyX:dNR8PMw42WJwM3YM1XkJUjPOLY0M40wz+0D4mZud8mQ=',
+
+        // End marker, disregard
+        __end: true
     };
 }
 
 let connection = null;
-let isJoined = false;
 let room = null;
 
 let localTracks = [];
@@ -40,9 +58,6 @@ function onLocalTracks(tracks) {
             $('body').append(
                 `<audio autoplay='1' muted='true' id='localAudio${i}' />`);
             localTracks[i].attach($(`#localAudio${i}`)[0]);
-        }
-        if (isJoined) {
-            room.addTrack(localTracks[i]);
         }
     }
 }
@@ -70,10 +85,6 @@ function onRemoteTrack(track) {
 
 function onConferenceJoined() {
     console.log('conference joined!');
-    isJoined = true;
-    for (let i = 0; i < localTracks.length; i++) {
-        room.addTrack(localTracks[i]);
-    }
 }
 
 
@@ -81,7 +92,8 @@ function onUserJoined(id) {
     console.log('user joined');
 
     participantIds.add(id);
-    
+
+    // Select all participants so we can receive video
     room.selectParticipants(Array.from(participantIds));
 }
 
@@ -96,7 +108,14 @@ function onUserLeft(id) {
 
 
 function onConnectionSuccess() {
-    room = connection.initJitsiConference(roomName, options.conference);
+    room = connection.initJitsiConference(roomName, options);
+
+    // Add local tracks before joining
+    for (let i = 0; i < localTracks.length; i++) {
+        room.addTrack(localTracks[i]);
+    }
+
+    // Setup event listeners
     room.on(
         JitsiMeetJS.events.conference.TRACK_ADDED,
         track => {
@@ -111,8 +130,11 @@ function onConnectionSuccess() {
     room.on(
         JitsiMeetJS.events.conference.USER_LEFT,
         onUserLeft);
+
+    // Join
     room.join();
-    room.setReceiverVideoConstraint(720);
+    room.setSenderVideoConstraint(720);  // Send at most 720p
+    room.setReceiverVideoConstraint(360);  // Receive at most 360p for each participant
 }
 
 
@@ -152,15 +174,20 @@ $(window).bind('beforeunload', disconnect);
 $(window).bind('unload', disconnect);
 
 $(document).ready(function() {
-    JitsiMeetJS.init();
-
-    $("#goButton").click(function() {
+    $("#goButton").click(async function() {
         const tenant = $("#tenantInput").val();
-        options = buildOptions(tenant);
         token = $("#tokenInput").val();
         roomName = $("#roomInput").val();
 
-        connection = new JitsiMeetJS.JitsiConnection(null, token, options.connection);
+        options = buildOptions(tenant, roomName);
+
+        JitsiMeetJS.init(options);
+        JitsiMeetJS.setLogLevel('trace');
+
+        const tracks = await JitsiMeetJS.createLocalTracks({ devices: [ 'audio', 'video' ] });
+        onLocalTracks(tracks);
+
+        connection = new JitsiMeetJS.JitsiConnection(null, token, options);
 
         connection.addEventListener(
             JitsiMeetJS.events.connection.CONNECTION_ESTABLISHED,
@@ -173,11 +200,5 @@ $(document).ready(function() {
             disconnect);
 
         connection.connect();
-
-        JitsiMeetJS.createLocalTracks({ devices: [ 'audio', 'video' ] })
-            .then(onLocalTracks)
-            .catch(error => {
-                throw error;
-            });
     });
 });
