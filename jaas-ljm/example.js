@@ -52,7 +52,7 @@ function buildOptions(tenant, roomName) {
         applicationName: 'My Sample JaaS App',
 
         // Misc
-        deploymentInfo: hasRegion ? { userRegion : REGION_SHARD_MAPPING[selectedRegion] }: {},
+        deploymentInfo: hasRegion ? { userRegion : REGION_SHARD_MAPPING[selectedRegion] } : {},
 
         // Logging
         logging: {
@@ -200,7 +200,6 @@ function disconnect() {
 }
  
 function addRegionsOptions() {
-    console.log('HERE');
     const regionSelectElem = document.querySelector('#regionInput');
     Object.keys(REGION_SHARD_MAPPING).forEach(region => {
         const optionElem = document.createElement('option');
