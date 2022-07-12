@@ -1,8 +1,17 @@
+const REGION_SHARD_MAPPING = {
+    'default': 'default',
+    'frankfurt': 'eu-central-1',
+    'london': 'eu-west-2'
+};
 let options;
 let roomName;
 let token;
 
 function buildOptions(tenant, roomName) {
+    const regionElem = document.querySelector('#regionInput');
+    const selectedRegion = regionElem.value;
+    const hasRegion = selectedRegion !== 'default';
+    const region =  hasRegion ? `${selectedRegion}.` : '';
     return {
         // Connection
         hosts: {
@@ -10,8 +19,8 @@ function buildOptions(tenant, roomName) {
             muc: `conference.${tenant}.8x8.vc`,
             focus: 'focus.8x8.vc'
         },
-        serviceUrl: `wss://8x8.vc/xmpp-websocket?room=${roomName}`,
-        websocketKeepAliveUrl: `https://8x8.vc/_unlock?room=${roomName}`,
+        serviceUrl: `wss://${region}8x8.vc/xmpp-websocket?room=${roomName}`,
+        websocketKeepAliveUrl: `https://${region}8x8.vc/_unlock?room=${roomName}`,
 
         // Video quality / constraints
         constraints: {
@@ -43,7 +52,7 @@ function buildOptions(tenant, roomName) {
         applicationName: 'My Sample JaaS App',
 
         // Misc
-        deploymentInfo: {},
+        deploymentInfo: hasRegion ? { userRegion : REGION_SHARD_MAPPING[selectedRegion] }: {},
 
         // Logging
         logging: {
@@ -189,11 +198,24 @@ function disconnect() {
         connection.disconnect();
     }
 }
+ 
+function addRegionsOptions() {
+    console.log('HERE');
+    const regionSelectElem = document.querySelector('#regionInput');
+    Object.keys(REGION_SHARD_MAPPING).forEach(region => {
+        const optionElem = document.createElement('option');
+        optionElem.value = region;
+        const upper = `${region[0].toUpperCase()}${region.substring(1)}`;
+        optionElem.text = upper;
+        regionSelectElem.appendChild(optionElem);
+    });
+}
 
 $(window).bind('beforeunload', disconnect);
 $(window).bind('unload', disconnect);
 
 $(document).ready(function() {
+    addRegionsOptions();
     $("#goButton").click(async function() {
         const tenant = $("#tenantInput").val();
         token = $("#tokenInput").val();
