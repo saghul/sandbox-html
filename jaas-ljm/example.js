@@ -1,32 +1,36 @@
 const LJM_SCRIPT = 'ljmScript';
 const BASE_SOURCE = 'https://8x8.vc/libs/lib-jitsi-meet.min.js';
+const BASE_SOURCE_STAGE = 'https://stage.8x8.vc/libs/lib-jitsi-meet.min.js';
 const REGION_SHARD_MAPPING = {
     'default': 'default',
     'frankfurt': 'eu-central-1',
     'london': 'eu-west-2'
 };
+const INVALID_CLASS = 'is-invalid';
 
 let options;
 let roomName;
 let token;
 let releaseVersion;
+let useStage;
 
 function buildOptions(tenant, room, release) {
     const selectedRegion = document.querySelector('#regionInput').value;
     const hasRegion = selectedRegion !== 'default';
     const region = hasRegion ? `${selectedRegion}.` : '';
     const releaseVersion = release ? `?release=release-${release}` : '';
+    const stage = useStage ? 'stage.' : ''
 
     return {
 
         // Connection
         hosts: {
-            domain: '8x8.vc',
-            muc: `conference.${tenant}.8x8.vc`,
-            focus: 'focus.8x8.vc'
+            domain: `${stage}8x8.vc`,
+            muc: `conference.${tenant}${stage}.8x8.vc`,
+            focus: `focus.${stage}8x8.vc`
         },
-        serviceUrl: `wss://${region}8x8.vc/${tenant}/xmpp-websocket?room=${room}${releaseVersion}`,
-        websocketKeepAliveUrl: `https://${region}8x8.vc/${tenant}/_unlock?room=${room}`,
+        serviceUrl: `wss://${region}${stage}8x8.vc/${tenant}/xmpp-websocket?room=${room}${releaseVersion}`,
+        websocketKeepAliveUrl: `https://${region}${stage}8x8.vc/${tenant}/_unlock?room=${room}`,
 
         // Video quality / constraints
         constraints: {
@@ -53,7 +57,7 @@ function buildOptions(tenant, room, release) {
         // Enable Callstats (note, none of this is secret, despite its name)
         callStatsID: '706724306',
         callStatsSecret: 'f+TKWryzPOyX:dNR8PMw42WJwM3YM1XkJUjPOLY0M40wz+0D4mZud8mQ=',
-        confID: `https://8x8.vc/${tenant}/${room}`,
+        confID: `https://${stage}8x8.vc/${tenant}/${room}`,
         siteID: tenant,
         applicationName: 'My Sample JaaS App',
 
@@ -214,11 +218,48 @@ const onConnectionFailed = () => {
     console.error('connection failed!');
 };
 
+const isTenantValid = () => {
+    if (!tenantInput.value.startsWith('vpaas-magic-cookie-')) {
+        tenantInput.classList.add(INVALID_CLASS);
+        return false;
+    }
+
+    if (tenantInput.classList.contains(INVALID_CLASS)) {
+        tenantInput.classList.remove(INVALID_CLASS);
+    }
+
+    return true;
+};
+
+const isRoomValid = () => {
+    if (!roomInput.value) {
+        roomInput.classList.add(INVALID_CLASS);
+        return false;
+    }
+
+    if (roomInput.classList.contains(INVALID_CLASS)) {
+        roomInput.classList.remove(INVALID_CLASS);
+    }
+
+    return true;
+};
+
+const isConfigValid = () => {
+    const validTenant = isTenantValid();
+    const validRoom = isRoomValid();
+
+    return validTenant && validRoom;
+};
+
 const connect = async () => {
+    if (!isConfigValid()) {
+        console.log('invalid configuration!');
+        return;
+    }
+
     const tenant = document.getElementById('tenantInput').value;
     token = document.getElementById('tokenInput').value;
     roomName = document.getElementById('roomInput').value;
-    releaseVersion = releaseInput.value;
 
     options = buildOptions(tenant, roomName, releaseVersion);
 
@@ -319,25 +360,8 @@ const addRegionsOptions = () => {
     });
 };
 
-const handleReleaseUpdate = async event => {
-    if ((!releaseVersion && !event.target.value) || releaseVersion === event.target.value) {
-        return;
-    }
-
-    console.log(`removing LJM version ${JitsiMeetJS.version}!`);
-
-    releaseVersion = event.target.value;
-    const releaseVersionParam = event.target.value ? `?release=release-${event.target.value}` : '';
-    const currentVersionScript = document.getElementById(LJM_SCRIPT);
-    let nextVersionScript = document.createElement('script');
-
-    nextVersionScript.id = LJM_SCRIPT;
-    nextVersionScript.src = `${BASE_SOURCE}${releaseVersionParam}`
-
-    currentVersionScript.remove();
-    document.body.appendChild(nextVersionScript);
-
-    // [testing purposes] Enable connection reload to apply the new release version.
+// [testing purposes] Notify that a connection reload is necessary to apply a different ljm script.
+const signalReload = () => {
     const RELOAD_BUTTON = 'reloadButton';
     if (document.getElementById(RELOAD_BUTTON) || !document.getElementsByTagName('video').length) {
         return;
@@ -346,7 +370,7 @@ const handleReleaseUpdate = async event => {
     let reloadButton = document.createElement('button');
     reloadButton.id = RELOAD_BUTTON;
     reloadButton.className = 'btn btn-outline-secondary bi bi-arrow-clockwise';
-    releaseInput.parentElement.appendChild(reloadButton);
+    goButton.parentElement.appendChild(reloadButton);
 
     reloadButton.addEventListener('click', async () => {
         reload();
@@ -354,18 +378,54 @@ const handleReleaseUpdate = async event => {
     });
 };
 
+const updateLjmScript = (releaseVersionValue, shouldUseStage) => {
+    console.log(`removing LJM version ${JitsiMeetJS.version}!`);
+
+    const currentVersionScript = document.getElementById(LJM_SCRIPT);
+    const releaseVersionParam = releaseVersionValue ? `?release=release-${releaseVersionValue}` : '';
+    const baseSource = shouldUseStage ? BASE_SOURCE_STAGE : BASE_SOURCE;
+    let nextVersionScript = document.createElement('script');
+    nextVersionScript.id = LJM_SCRIPT;
+    nextVersionScript.src = `${baseSource}${releaseVersionParam}`
+
+    currentVersionScript.remove();
+    document.body.appendChild(nextVersionScript);
+
+    signalReload();
+};
+
+const handleReleaseUpdate = async event => {
+    if ((!releaseVersion && !event.target.value) || releaseVersion === event.target.value) {
+        return;
+    }
+
+    releaseVersion = event.target.value;
+    updateLjmScript(releaseVersion, useStage);
+};
+
+const handleUseStageUpdate = async event => {
+    useStage = event.target.checked;
+    updateLjmScript(releaseVersion, useStage);
+}
+
 window.addEventListener('beforeunload', disconnect);
 window.addEventListener('unload', disconnect);
 
 document.addEventListener('DOMContentLoaded', () => {
     addRegionsOptions();
     const form = document.getElementById('form');
+    const tenantInput = document.getElementById('tenantInput');
+    const roomInput = document.getElementById('roomInput');
     const releaseInput = document.getElementById('releaseInput');
+    const useStageInput = document.getElementById('useStageInput');
     const goButton = document.getElementById('goButton');
     const hangupButton = document.getElementById('hangupButton');
 
     form.addEventListener('submit', event => event.preventDefault());
+    tenantInput.addEventListener('blur', isTenantValid);
+    roomInput.addEventListener('blur', isRoomValid);
     releaseInput.addEventListener('blur', handleReleaseUpdate);
+    useStageInput.addEventListener('change', handleUseStageUpdate);
     goButton.addEventListener('click', connect);
     hangupButton.addEventListener('click', hangup);
 });
