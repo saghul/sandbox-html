@@ -7,6 +7,7 @@ const REGION_SHARD_MAPPING = {
     'london': 'eu-west-2'
 };
 const INVALID_CLASS = 'is-invalid';
+const HIDE_CLASS = 'd-none';
 
 let options;
 let roomName;
@@ -15,11 +16,12 @@ let releaseVersion;
 let useStage;
 
 function buildOptions(tenant, room, release) {
-    const selectedRegion = document.querySelector('#regionInput').value;
+    const selectedRegion = document.getElementById('regionInput').value;
     const hasRegion = selectedRegion !== 'default';
     const region = hasRegion ? `${selectedRegion}.` : '';
-    const releaseVersion = release ? `?release=release-${release}` : '';
     const stage = useStage ? 'stage.' : ''
+    const subdomain = useStage ? stage : region;
+    const releaseVersion = release ? `?release=release-${release}` : '';
 
     return {
 
@@ -29,8 +31,8 @@ function buildOptions(tenant, room, release) {
             muc: `conference.${tenant}${stage}.8x8.vc`,
             focus: `focus.${stage}8x8.vc`
         },
-        serviceUrl: `wss://${region}${stage}8x8.vc/${tenant}/xmpp-websocket?room=${room}${releaseVersion}`,
-        websocketKeepAliveUrl: `https://${region}${stage}8x8.vc/${tenant}/_unlock?room=${room}`,
+        serviceUrl: `wss://${subdomain}8x8.vc/${tenant}/xmpp-websocket?room=${room}${releaseVersion}`,
+        websocketKeepAliveUrl: `https://${subdomain}8x8.vc/${tenant}/_unlock?room=${room}`,
 
         // Video quality / constraints
         constraints: {
@@ -350,13 +352,13 @@ const hangup = async () => {
 };
 
 const addRegionsOptions = () => {
-    const regionSelectElem = document.querySelector('#regionInput');
+    const regionInput = document.getElementById('regionInput');
     Object.keys(REGION_SHARD_MAPPING).forEach(region => {
         const optionElem = document.createElement('option');
         optionElem.value = region;
         const upper = `${region[0].toUpperCase()}${region.substring(1)}`;
         optionElem.text = upper;
-        regionSelectElem.appendChild(optionElem);
+        regionInput.appendChild(optionElem);
     });
 };
 
@@ -405,6 +407,14 @@ const handleReleaseUpdate = async event => {
 
 const handleUseStageUpdate = async event => {
     useStage = event.target.checked;
+
+    const regionInputParent = document.getElementById('regionInput').parentElement;
+    if (useStage) {
+        regionInputParent.classList.add(HIDE_CLASS);
+    } else {
+        regionInputParent.classList.contains(HIDE_CLASS) && regionInputParent.classList.remove(HIDE_CLASS);
+    }
+
     updateLjmScript(releaseVersion, useStage);
 }
 
