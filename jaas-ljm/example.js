@@ -416,7 +416,7 @@ const handleUseStageUpdate = async event => {
     }
 
     updateLjmScript(releaseVersion, useStage);
-}
+};
 
 window.addEventListener('beforeunload', disconnect);
 window.addEventListener('unload', disconnect);
