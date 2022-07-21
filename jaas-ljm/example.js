@@ -28,7 +28,7 @@ function buildOptions(tenant, room, release) {
         // Connection
         hosts: {
             domain: `${stage}8x8.vc`,
-            muc: `conference.${tenant}${stage}.8x8.vc`,
+            muc: `conference.${tenant}.${stage}8x8.vc`,
             focus: `focus.${stage}8x8.vc`
         },
         serviceUrl: `wss://${subdomain}8x8.vc/${tenant}/xmpp-websocket?room=${room}${releaseVersion}`,
